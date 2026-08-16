@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>CCTV Wall</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main id="stage">
+      <video id="video" autoplay muted playsinline></video>
+
+      <!-- the tile the click landed on, held up while the camera loads -->
+      <canvas id="placeholder"></canvas>
+      <video id="camera-video" autoplay muted playsinline></video>
+
+      <div id="overlay" aria-hidden="true">
+        <div id="highlight"><span id="highlight-label"></span></div>
+      </div>
+
+      <div id="spinner" aria-hidden="true"></div>
+
+      <div id="status" class="status"><span id="status-text"></span></div>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>

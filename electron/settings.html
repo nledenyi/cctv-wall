@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>CCTV Wall settings</title>
+    <style>
+      :root {
+        --bg: #0f1216;
+        --panel: #171b21;
+        --line: #252b34;
+        --text: #eef1f5;
+        --muted: #8d97a4;
+        --accent: #4f8ef7;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 22px;
+        background: var(--bg);
+        color: var(--text);
+        font:
+          500 13.5px/1.5 ui-sans-serif,
+          system-ui,
+          "Segoe UI",
+          sans-serif;
+      }
+      h1 {
+        margin: 0 0 4px;
+        font-size: 17px;
+      }
+      .sub {
+        margin: 0 0 20px;
+        color: var(--muted);
+        font-size: 12.5px;
+      }
+      fieldset {
+        margin: 0 0 16px;
+        padding: 14px 16px;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 9px;
+      }
+      legend {
+        padding: 0 6px;
+        color: var(--muted);
+        font-size: 11.5px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+      .row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        padding: 7px 0;
+      }
+      /* a monitor name is as long as the manufacturer felt like making it, so
+         give it the whole width rather than a column it has to fit into */
+      .row.stack {
+        display: block;
+      }
+      .row.stack select {
+        width: 100%;
+        margin-top: 6px;
+      }
+      .row + .row {
+        border-top: 1px solid var(--line);
+      }
+      label {
+        flex: 1;
+      }
+      .hint {
+        display: block;
+        color: var(--muted);
+        font-size: 11.5px;
+        font-weight: 400;
+      }
+      .warn {
+        display: none;
+        color: #f0a34a;
+        font-size: 11.5px;
+        font-weight: 400;
+      }
+      .warn.on {
+        display: block;
+      }
+      input[type="text"],
+      input[type="number"],
+      select {
+        width: 190px;
+        padding: 6px 9px;
+        background: #0b0e12;
+        color: var(--text);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        font: inherit;
+      }
+      input[type="number"] {
+        width: 92px;
+      }
+      input[type="checkbox"] {
+        width: 17px;
+        height: 17px;
+        accent-color: var(--accent);
+      }
+      #version {
+        position: fixed;
+        left: 22px;
+        bottom: 18px;
+        color: var(--muted);
+        font-size: 12px;
+        pointer-events: none;
+      }
+      /* nothing to press, so the only feedback that a change took is this */
+      #saved {
+        position: fixed;
+        right: 22px;
+        bottom: 18px;
+        padding: 5px 12px;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        color: var(--muted);
+        font-size: 12px;
+        opacity: 0;
+        transition: opacity 200ms ease;
+        pointer-events: none;
+      }
+      #saved.on {
+        opacity: 1;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>CCTV Wall</h1>
+
+    <fieldset>
+      <legend>Source</legend>
+      <div class="row">
+        <label for="frigateHost">
+          Frigate address
+          <span class="hint">
+            Type just the host and press Find, or enter host:port yourself
+          </span>
+        </label>
+        <input id="frigateHost" type="text" placeholder="10.0.0.5" />
+      </div>
+      <div class="row">
+        <button id="testHost" type="button">Find Frigate</button>
+        <span id="testResult" class="hint"></span>
+      </div>
+
+      <div class="row stack">
+        <label for="frigateUser">
+          Frigate login
+          <span class="hint">
+            Only for the TLS port (8971), which needs one. Leave empty for
+            port 5000. Saved as typed in config.json, so use a viewer account
+          </span>
+        </label>
+        <input id="frigateUser" type="text" placeholder="username" />
+        <input id="frigatePassword" type="password" placeholder="password" />
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Window</legend>
+      <div class="row stack">
+        <label for="display">
+          Monitor
+          <span class="hint">Matched by name, so replugging is survivable</span>
+        </label>
+        <select id="display"></select>
+      </div>
+      <div class="row stack">
+        <label for="windowMode">
+          Window mode
+          <span class="hint" id="windowModeHint"></span>
+        </label>
+        <select id="windowMode">
+          <option value="window">Window</option>
+          <option value="fullscreen">Full screen</option>
+          <option value="kiosk">Kiosk</option>
+        </select>
+      </div>
+      <div class="row">
+        <label for="alwaysOnTop">Always on top</label>
+        <input id="alwaysOnTop" type="checkbox" />
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Unattended</legend>
+      <div class="row">
+        <label for="autoStart">Start with Windows</label>
+        <input id="autoStart" type="checkbox" />
+      </div>
+      <div class="row">
+        <label for="keepDisplayAwake">
+          Keep the display awake
+          <span class="hint">Stops Windows blanking the screen</span>
+        </label>
+        <input id="keepDisplayAwake" type="checkbox" />
+      </div>
+      <div class="row">
+        <label for="idleReturnSeconds">
+          Return to the wall after
+          <span class="hint">Seconds with no input, 0 to never</span>
+        </label>
+        <input
+          id="idleReturnSeconds"
+          type="number"
+          min="0"
+          max="86400"
+          step="5"
+        />
+      </div>
+      <div class="row">
+        <label for="reloadHours">
+          Reload every
+          <span class="hint">Hours, 0 to never</span>
+        </label>
+        <input id="reloadHours" type="number" min="0" max="168" step="1" />
+      </div>
+      <div class="row">
+        <label for="escapeHotkey">
+          Escape shortcut
+          <span class="hint"
+            >Drops out of full screen and back, without changing the mode
+            above</span
+          >
+          <span class="warn" id="hotkeyWarn">
+            Not registered, another application has it. Pick a different
+            combination, or use the tray.
+          </span>
+        </label>
+        <input id="escapeHotkey" type="text" placeholder="Control+Shift+Q" />
+      </div>
+    </fieldset>
+
+    <span id="version"></span>
+    <span id="saved">Saved</span>
+
+    <script>
+      const CHECKBOXES = ["alwaysOnTop", "autoStart", "keepDisplayAwake"];
+
+      const MODE_HINTS = {
+        window: "A normal window with a title bar, inside the taskbar.",
+        fullscreen:
+          "Fills the screen. Still has a taskbar button and closes normally.",
+        kiosk:
+          "Full screen, no taskbar button, and Alt+F4 does nothing. Quit from the tray or with the shortcut.",
+      };
+      // the ceilings match electron/config.js, which clamps the file too
+      const NUMBERS = {
+        idleReturnSeconds: 86400,
+        reloadHours: 168,
+      };
+      const TEXTS = [
+        "frigateHost",
+        "frigateUser",
+        "frigatePassword",
+        "escapeHotkey",
+      ];
+      const NUMBER_KEYS = Object.keys(NUMBERS);
+
+      const el = (id) => document.getElementById(id);
+      let displays = [];
+
+      async function load() {
+        const state = await window.settings.get();
+        displays = state.displays;
+
+        const select = el("display");
+        select.innerHTML = "";
+        displays.forEach((d) => {
+          const option = document.createElement("option");
+          option.value = String(d.index);
+          option.textContent =
+            `${d.label || "Display " + (d.index + 1)} ` +
+            `(${d.width}x${d.height})${d.primary ? " primary" : ""}`;
+          select.append(option);
+        });
+
+        // the main process resolved this the same way the window did, so the
+        // picker cannot disagree with the monitor the wall is actually on
+        if (state.resolvedDisplayIndex >= 0) {
+          select.value = String(state.resolvedDisplayIndex);
+        }
+
+        el("version").textContent = `Version ${state.version}`;
+        el("hotkeyWarn").classList.toggle("on", state.hotkeyOk === false);
+        el("windowMode").value = state.config.windowMode;
+        showModeHint();
+
+        TEXTS.forEach((k) => (el(k).value = state.config[k] ?? ""));
+        NUMBER_KEYS.forEach((k) => (el(k).value = state.config[k] ?? 0));
+        CHECKBOXES.forEach((k) => (el(k).checked = Boolean(state.config[k])));
+      }
+
+      let savedTimer = null;
+
+      function flashSaved() {
+        el("saved").classList.add("on");
+        clearTimeout(savedTimer);
+        savedTimer = setTimeout(() => el("saved").classList.remove("on"), 1400);
+      }
+
+      async function persist() {
+        const next = {};
+        // a password is the one field where a trailing space can be deliberate,
+        // and trimming it silently fails the login with nothing to look at
+        TEXTS.forEach(
+          (k) =>
+            (next[k] =
+              k === "frigatePassword" ? el(k).value : el(k).value.trim()),
+        );
+        NUMBER_KEYS.forEach(
+          (k) =>
+            (next[k] = Math.min(
+              Math.max(0, Math.round(Number(el(k).value) || 0)),
+              NUMBERS[k],
+            )),
+        );
+        CHECKBOXES.forEach((k) => (next[k] = el(k).checked));
+        next.windowMode = el("windowMode").value;
+
+        // put the cleaned value back, so a typed -9 does not sit there
+        // looking like it was accepted
+        NUMBER_KEYS.forEach((k) => (el(k).value = next[k]));
+        TEXTS.forEach((k) => (el(k).value = next[k]));
+
+        const result = await window.settings.save(next);
+
+        // a shortcut electron cannot parse is the difference between being
+        // able to leave kiosk mode and not, so it is said out loud
+        el("hotkeyWarn").classList.toggle("on", result?.hotkeyOk === false);
+        flashSaved();
+      }
+
+      // change rather than input, so a half typed address is never saved and
+      // the renderer is not reloaded on every keystroke
+      [...TEXTS, ...NUMBER_KEYS, ...CHECKBOXES, "windowMode"].forEach((k) =>
+        el(k).addEventListener("change", persist),
+      );
+
+      function showModeHint() {
+        el("windowModeHint").textContent = MODE_HINTS[el("windowMode").value];
+      }
+
+      el("windowMode").addEventListener("change", showModeHint);
+
+      // Ports and schemes are the part of this that nobody should have to
+      // know. Type a host, and the main process finds which of Frigate's two
+      // ports answers and writes the full address back into the field.
+      el("testHost").addEventListener("click", async () => {
+        const button = el("testHost");
+        const out = el("testResult");
+
+        button.disabled = true;
+        out.textContent = "Looking...";
+
+        try {
+          const result = await window.settings.testHost(el("frigateHost").value);
+          out.textContent = result.message;
+
+          if (result.ok) {
+            el("frigateHost").value = result.host;
+            await persist();
+          }
+        } finally {
+          button.disabled = false;
+        }
+      });
+
+      el("display").addEventListener("change", async () => {
+        await window.settings.pickDisplay(Number(el("display").value));
+        flashSaved();
+      });
+
+      // the tray can change settings behind this window, and persist() sends
+      // every field, so a stale checkbox would quietly put the old value back
+      window.addEventListener("focus", load);
+
+      load();
+    </script>
+  </body>
+</html>

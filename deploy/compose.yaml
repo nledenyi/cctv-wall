@@ -1,0 +1,18 @@
+services:
+  cctv-viewer:
+    image: nginx:alpine
+    container_name: cctv-viewer
+    restart: unless-stopped
+    ports:
+      - "8099:80"
+    environment:
+      # host:port of your Frigate, as this container reaches it. Port 5000 is
+      # Frigate's unauthenticated http port, which is what this proxy wants:
+      # it terminates TLS itself, so it does not need Frigate's 8971 and does
+      # not need to hold a login.
+      FRIGATE_HOST: "${FRIGATE_HOST:?set FRIGATE_HOST, e.g. 10.0.0.5:5000}"
+    volumes:
+      - ./site:/usr/share/nginx/html:ro
+      # nginx:alpine renders anything in this directory through envsubst on
+      # start, so the template picks up FRIGATE_HOST without a custom image
+      - ./nginx.conf.template:/etc/nginx/templates/default.conf.template:ro

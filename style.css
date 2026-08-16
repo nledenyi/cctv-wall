@@ -1,0 +1,189 @@
+:root {
+  --bg: #07080a;
+  --line: rgba(255, 255, 255, 0.9);
+  --tint: rgba(255, 255, 255, 0.07);
+  --chip: rgba(10, 12, 15, 0.82);
+  --text: #f2f4f7;
+  --muted: #9aa3ad;
+  --ok: #35c26a;
+  --warn: #e0a63b;
+  --bad: #e5544b;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font:
+    500 14px/1.4 ui-sans-serif,
+    system-ui,
+    "Segoe UI",
+    sans-serif;
+  overflow: hidden;
+  user-select: none;
+}
+
+#stage {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+}
+
+#stage.idle {
+  cursor: none;
+}
+
+/* The wall, the held tile and the single camera are stacked in that order.
+   The wall never stops playing, so coming back to it costs nothing. */
+#video,
+#camera-video,
+#placeholder {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+#video {
+  background: var(--bg);
+}
+
+/* opaque, so the wall running underneath cannot show through the letterbox */
+#placeholder,
+#camera-video {
+  background: var(--bg);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 260ms ease;
+}
+
+#placeholder.on,
+#camera-video.on {
+  opacity: 1;
+}
+
+/* upscaled from one tile, so soften what cannot be sharp */
+#placeholder {
+  filter: blur(3px) saturate(0.94);
+  transform: scale(1.015);
+}
+
+/* Overlay sits on the whole stage; the highlight is positioned in screen
+   pixels from the rectangle the layout gives us in canvas pixels. */
+#overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+#highlight {
+  position: absolute;
+  display: none;
+  border: 2px solid var(--line);
+  background: var(--tint);
+  border-radius: 3px;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.55);
+  transition:
+    left 90ms ease-out,
+    top 90ms ease-out,
+    width 90ms ease-out,
+    height 90ms ease-out;
+}
+
+#highlight.on {
+  display: block;
+}
+
+/* Inside the tile, not above it: a tile on the top row has nothing above it
+   but the edge of the video. Bottom left rather than top left, because
+   Frigate burns its own timestamp and camera name into the top left of every
+   tile it composes. */
+#highlight-label {
+  position: absolute;
+  left: 6px;
+  bottom: 6px;
+  padding: 4px 9px;
+  background: var(--chip);
+  border-radius: 5px;
+  font-size: 13px;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  backdrop-filter: blur(6px);
+}
+
+.status {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px 6px 10px;
+  background: var(--chip);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 12.5px;
+  backdrop-filter: blur(6px);
+  opacity: 0;
+  transition: opacity 220ms ease;
+  pointer-events: none;
+}
+
+.status.show {
+  opacity: 1;
+}
+
+.status::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+
+.status.ok::before {
+  background: var(--ok);
+}
+.status.warn::before {
+  background: var(--warn);
+}
+.status.bad::before {
+  background: var(--bad);
+}
+
+/* Shown while a camera is loading, over the tile being held up. It appears
+   late so a quick switch never flashes it, and leaves immediately. */
+#spinner {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 34px;
+  height: 34px;
+  margin: -17px 0 0 -17px;
+  border: 2px solid rgba(255, 255, 255, 0.22);
+  border-top-color: rgba(255, 255, 255, 0.85);
+  border-radius: 50%;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 180ms ease;
+  animation: spin 900ms linear infinite;
+}
+
+#spinner.on {
+  opacity: 1;
+  transition: opacity 200ms ease 250ms;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

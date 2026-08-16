@@ -1,0 +1,46 @@
+{
+  "name": "cctv-viewer",
+  "version": "0.1.8",
+  "description": "Frigate Birdseye wall viewer: click a tile to open that camera full screen",
+  "author": "Norbert Ledényi",
+  "license": "MIT",
+  "private": true,
+  "main": "electron/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win --publish never",
+    "test": "node --test electron/displays.test.js electron/config.test.js"
+  },
+  "devDependencies": {
+    "electron": "^43.2.0",
+    "electron-builder": "^26.15.3"
+  },
+  "build": {
+    "appId": "com.ledenyi.cctvwall",
+    "productName": "CCTV Wall",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "electron/**/*",
+      "!electron/*.test.js",
+      "index.html",
+      "app.js",
+      "style.css"
+    ],
+    "win": {
+      "target": [
+        "nsis",
+        "zip"
+      ],
+      "icon": "electron/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "CCTV Wall"
+    }
+  }
+}

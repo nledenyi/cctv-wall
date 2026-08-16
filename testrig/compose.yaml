@@ -1,0 +1,19 @@
+services:
+  frigate-testrig:
+    container_name: frigate-testrig
+    # stock upstream, the exact release the home lab fork is built on top of
+    image: ghcr.io/blakeblackshear/frigate:0.18.0-beta2
+    restart: unless-stopped
+    shm_size: "256mb"
+    volumes:
+      - ./config:/config
+      - ./media:/media/frigate
+      - type: tmpfs
+        target: /tmp/cache
+        tmpfs:
+          size: 200000000
+    ports:
+      # 5000 is the real NVR's port on its own host, and 5001 is dockge's on
+      # this one. 5005 is deliberately neither, so the NVR and the rig can never
+      # be confused in a browser tab.
+      - "5005:5000"

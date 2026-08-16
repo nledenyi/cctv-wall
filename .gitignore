@@ -1,0 +1,24 @@
+node_modules/
+dist/
+release/
+.DS_Store
+
+# mini-app catalog state: personal, not repo content
+.miniapp.yml
+.copier-answers.yml
+
+# test rig runtime data
+testrig/media/
+testrig/config/
+
+# Working notes. These describe a specific home lab: hostnames, reverse proxy
+# paths, an identity provider, private addresses and hardware. They are the
+# most useful documents in the project and the least publishable ones, so they
+# live on disk and out of git until a public version of each is written.
+#
+# They keep their names rather than moving to notes/ because tooling reads
+# them from these paths (the project catalog reads TODO.md).
+TODO.md
+FEATURES.md
+ARCHITECTURE.md
+notes/

@@ -1,0 +1,24 @@
+server {
+    listen 80;
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # a redeploy should be visible on reload, this is not a CDN
+    add_header Cache-Control "no-store" always;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Frigate's layout socket and go2rtc's stream sockets, served from this
+    # origin so the page can talk to them over TLS once it is behind Traefik
+    location ~ ^/(ws$|live/) {
+        proxy_pass http://${FRIGATE_HOST};
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_read_timeout 3600s;
+        proxy_buffering off;
+    }
+}

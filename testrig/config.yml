@@ -1,0 +1,135 @@
+# Stock Frigate, five public streams, no detection.
+#
+# The point is to run the wall against upstream Frigate rather than the fork the
+# home lab NVR runs, so nothing here uses a forked config key. If a key in this
+# file stops the container from starting, that is the test failing, not a typo.
+
+mqtt:
+  # the real NVR publishes to the home broker; this one must stay silent
+  enabled: false
+
+auth:
+  enabled: false
+
+detect:
+  # birdseye still gets frames from the detect stream, it just does not run a
+  # detector over them. leaving this on would put a CPU detector on five streams
+  enabled: false
+  fps: 5
+
+record:
+  enabled: false
+
+snapshots:
+  enabled: false
+
+ffmpeg:
+  # the default is preset-rtsp-generic, which passes -rtsp_transport and dies on
+  # an http input. these are the http equivalents. -stream_loop is for the three
+  # sources that are recordings rather than live, so they do not end and restart
+  # the camera every few minutes.
+  input_args:
+    - -re
+    - -stream_loop
+    - "-1"
+    - -avoid_negative_ts
+    - make_zero
+    - -fflags
+    - +genpts+discardcorrupt
+    - -flags
+    - low_delay
+    - -strict
+    - experimental
+    - -analyzeduration
+    - 1000M
+    - -probesize
+    - 1000M
+    - -reconnect
+    - "1"
+    - -reconnect_streamed
+    - "1"
+    - -reconnect_delay_max
+    - "5"
+
+# Frigate restreams birdseye through go2rtc on its own, but it does NOT do that
+# for the cameras: a camera is only in go2rtc if it is named here. The wall opens
+# live/mse/api/ws?src=<camera> when a tile is clicked, so without this the wall
+# shows the canvas and then nothing when you click it. The real NVR has the same
+# block, pointing at the UniFi substreams.
+go2rtc:
+  streams:
+    bipbop: ffmpeg:https://devstreaming-cdn.apple.com/videos/streaming/examples/img_bipbop_adv_example_ts/v3/prog_index.m3u8#video=copy
+    bigbuckbunny: ffmpeg:https://test-streams.mux.dev/x36xhzz/url_4/193039199_mp4_h264_aac_7.m3u8#video=copy
+    tearsofsteel: ffmpeg:https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/tears-of-steel-audio_eng=128002-video_eng=1001000.m3u8#video=copy
+    redbull: ffmpeg:https://rbmn-live.akamaized.net/hls/live/590964/BoRB-AT/master_928.m3u8#video=copy
+    tagesschau: ffmpeg:https://tagesschau.akamaized.net/hls/live/2020115/tagesschau/tagesschau_1/master-360p-1328.m3u8#video=copy
+
+birdseye:
+  enabled: true
+  # the wall reads the composed canvas over go2rtc, so this has to be on
+  restream: true
+  # 'online' is a fork mode. upstream has objects, motion and continuous, and
+  # continuous is the one that keeps a stable set of tiles
+  mode: continuous
+  width: 1920
+  height: 1080
+  quality: 8
+
+cameras:
+  # Apple's HLS example. It burns a timecode into the picture, which makes it
+  # the easiest tile to identify when checking that a click lands on the right
+  # camera.
+  bipbop:
+    ffmpeg:
+      inputs:
+        - path: https://devstreaming-cdn.apple.com/videos/streaming/examples/img_bipbop_adv_example_ts/v3/prog_index.m3u8
+          roles:
+            - detect
+    detect:
+      width: 640
+      height: 360
+
+  # Mux's public test stream, 16:9 but a different size to the others
+  bigbuckbunny:
+    ffmpeg:
+      inputs:
+        - path: https://test-streams.mux.dev/x36xhzz/url_4/193039199_mp4_h264_aac_7.m3u8
+          roles:
+            - detect
+    detect:
+      width: 512
+      height: 288
+
+  # 784x350 is 2.24:1, deliberately not 16:9. Upstream's packer normalises tiles
+  # to standard aspect ratios, so this is the one that exercises that path.
+  tearsofsteel:
+    ffmpeg:
+      inputs:
+        - path: https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/tears-of-steel-audio_eng=128002-video_eng=1001000.m3u8
+          roles:
+            - detect
+    detect:
+      width: 784
+      height: 350
+
+  # live, 24/7
+  redbull:
+    ffmpeg:
+      inputs:
+        - path: https://rbmn-live.akamaized.net/hls/live/590964/BoRB-AT/master_928.m3u8
+          roles:
+            - detect
+    detect:
+      width: 640
+      height: 360
+
+  # live, 24/7
+  tagesschau:
+    ffmpeg:
+      inputs:
+        - path: https://tagesschau.akamaized.net/hls/live/2020115/tagesschau/tagesschau_1/master-360p-1328.m3u8
+          roles:
+            - detect
+    detect:
+      width: 640
+      height: 360
