@@ -1,4 +1,4 @@
-"""Dev server for the viewer: no caching, threaded, serves this directory."""
+"""Dev server for the wall: no caching, threaded, serves this directory."""
 
 import http.server
 import os

@@ -1,7 +1,7 @@
 services:
-  cctv-viewer:
+  cctv-wall:
     image: nginx:alpine
-    container_name: cctv-viewer
+    container_name: cctv-wall
     restart: unless-stopped
     ports:
       - "8099:80"

@@ -30,7 +30,7 @@ itself was loaded over.
 
 `electron/main.js` owns everything the page cannot: which monitor, staying on
 top, staying awake, starting with Windows, and getting out again. Settings live
-in `%APPDATA%\cctv-viewer\config.json` and are edited from the tray.
+in `%APPDATA%\cctv-wall\config.json` and are edited from the tray.
 
 Installers are built by GitHub Actions on `windows-latest`, because
 cross-building NSIS from Linux means wine. Push a `v*` tag for a release, or
