@@ -130,6 +130,7 @@ function applyWindowSettings() {
 
     applyTaskbarButton();
     placed = windowState(target);
+    raiseSettings();
   };
 
   // leaving fullscreen is not instant on Windows, and a move issued in the
@@ -159,6 +160,7 @@ function createWindow() {
     win.show();
     // showing is the other transition that puts the button back
     applyTaskbarButton();
+    raiseSettings();
   });
 
   // a dead renderer takes the wall down with it, so bring it back
@@ -373,6 +375,25 @@ function openSettings() {
   });
 
   settingsWin.loadFile(path.join(__dirname, "settings.html"));
+}
+
+/**
+ * Put the settings window back above the wall.
+ *
+ * Both windows ask for always-on-top, so between them the order is decided by
+ * whichever was raised last, and the wall is raised on a schedule of its own:
+ * ready-to-show waits for the renderer, which waits for a Frigate login, and
+ * applyWindowSettings runs again every time a monitor settles. Raising the
+ * settings window once when it opens is therefore not enough - on a first run
+ * it opens first and is buried a moment later. Every path that raises the wall
+ * calls this after it.
+ */
+function raiseSettings() {
+  if (!settingsWin || settingsWin.isDestroyed()) return;
+  // moveTop for the z-order, focus for the keyboard: a window can be visible
+  // and still not be where typing goes
+  settingsWin.moveTop();
+  settingsWin.focus();
 }
 
 ipcMain.handle("config:get", () => {
@@ -590,6 +611,10 @@ if (!app.requestSingleInstanceLock()) {
 } else {
   app.on("second-instance", () => {
     if (win && !win.isDestroyed()) win.show();
+    // the realistic second launch is someone double-clicking the shortcut
+    // again because the first one looked like it did nothing, which is exactly
+    // the first run this must not bury the settings window on
+    raiseSettings();
   });
 
   // Frigate generates its own certificate for its TLS port, so wss:// to it
@@ -641,7 +666,10 @@ if (!app.requestSingleInstanceLock()) {
       // settings window it is asking for nowhere in sight. Open it.
       //
       // After applyAll, not before: both windows want always-on-top, so the
-      // one raised last is the one you can actually reach.
+      // one raised last is the one you can actually reach. That is necessary
+      // and not sufficient - the wall raises itself again later, from
+      // ready-to-show and from every monitor change - so raiseSettings runs
+      // after each of those too.
       if (!config.frigateHost) openSettings();
     })
     .catch((err) => {
