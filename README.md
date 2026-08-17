@@ -55,6 +55,37 @@ Three things worth knowing before changing that file:
   always-on-top are exactly what makes it unreachable. The saved config decides
   every run after that.
 
+## Updating
+
+From the settings window, under Updates: one button that checks, then offers
+the download, then offers the restart. Three presses, and nothing happens
+without them. There is no check on start, no download on finding a version, and
+nothing installed when the app happens to quit - `autoDownload` and
+`autoInstallOnAppQuit` are both off and are meant to stay off. This is a screen
+nobody sits in front of, so an update that decides its own moment is an update
+that takes the cameras away at the wrong one.
+
+Two things carry it, and neither is obvious from the code that uses them:
+
+- **`latest.yml` and the `.exe.blockmap` are the update feed.** electron-builder
+  writes them because a `publish` provider is configured, not because anything
+  is published, and the release workflow uploads them beside the installer. A
+  release without them is a release nothing can update to, which is why the
+  build fails rather than warns if they are not there. Releases before v0.2.1
+  do not have them, so getting onto the first version that can update itself
+  costs one manual install.
+- **`perMachine: false` is what makes an update installable at all.** A
+  per-user install needs no elevation, so the updater can run the installer
+  without a UAC prompt appearing on an unattended machine. Turning it on would
+  end self-updates quietly, with nothing but this paragraph to say so.
+
+The app is unsigned, so there is no publisher name for electron-updater's
+Authenticode check to compare against and nothing is verified that way. What is
+left is the sha512 in `latest.yml` fetched over HTTPS from GitHub, which covers
+the download honestly - but the trust root is the GitHub account, not a
+certificate. Anything that can publish a release here can hand the wall a
+binary.
+
 ## What Frigate has to be configured with
 
 Two things, and the second one is easy to miss:

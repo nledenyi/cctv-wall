@@ -15,6 +15,7 @@ const path = require("path");
 const { pathToFileURL } = require("url");
 
 const configStore = require("./config");
+const { describe: describeUpdate } = require("./updates");
 
 let config = null;
 let win = null;
@@ -27,6 +28,8 @@ let placed = null;
 let quitting = false;
 let escaped = false;
 let hotkeyOk = true;
+let updateState = { status: "idle" };
+let updater = null;
 
 /* ----------------------------------------------------------------- displays */
 
@@ -395,6 +398,84 @@ function raiseSettings() {
   settingsWin.moveTop();
   settingsWin.focus();
 }
+
+/* ----------------------------------------------------------------- updates */
+
+const updateView = () =>
+  describeUpdate({ ...updateState, packaged: app.isPackaged });
+
+function setUpdateState(patch) {
+  updateState = { ...updateState, ...patch };
+  if (settingsWin && !settingsWin.isDestroyed()) {
+    settingsWin.webContents.send("update:state", updateView());
+  }
+}
+
+/**
+ * electron-updater, or null when there is nothing it could do.
+ *
+ * Required here rather than at the top, and only once, because an unpackaged
+ * run has no feed to read and no installer to run: loading it at all would be
+ * to set up an updater for an app that cannot be updated.
+ *
+ * Both autos are off, which is the entire policy. The wall runs unattended in
+ * front of a screen nobody is sitting at, so an update that downloads itself
+ * or installs itself on quit is an update that takes the cameras away at a
+ * moment nobody chose. Every step below is a press.
+ */
+function getUpdater() {
+  if (!app.isPackaged) return null;
+  if (updater) return updater;
+
+  updater = require("electron-updater").autoUpdater;
+  updater.autoDownload = false;
+  updater.autoInstallOnAppQuit = false;
+
+  updater.on("update-available", (info) =>
+    setUpdateState({ status: "available", version: info?.version }),
+  );
+  updater.on("update-not-available", () => setUpdateState({ status: "current" }));
+  updater.on("download-progress", (progress) =>
+    setUpdateState({ status: "downloading", percent: progress?.percent }),
+  );
+  updater.on("update-downloaded", (info) =>
+    setUpdateState({ status: "ready", version: info?.version }),
+  );
+  updater.on("error", (err) =>
+    setUpdateState({ status: "error", message: String(err?.message || err) }),
+  );
+
+  return updater;
+}
+
+ipcMain.handle("update:state", () => updateView());
+
+ipcMain.handle("update:act", async (_event, action) => {
+  const auto = getUpdater();
+  if (!auto) return updateView();
+
+  try {
+    if (action === "check") {
+      setUpdateState({ status: "checking" });
+      await auto.checkForUpdates();
+    } else if (action === "download") {
+      setUpdateState({ status: "downloading", percent: 0 });
+      await auto.downloadUpdate();
+    } else if (action === "install") {
+      // silent, because an installer waiting to be clicked through on a wall
+      // display is an app that never comes back, and relaunched, because
+      // start-with-Windows is the only other thing that would start it and it
+      // is off by default
+      auto.quitAndInstall(true, true);
+    }
+  } catch (err) {
+    // these reject and emit error, so this is usually the second one to say
+    // so. It is here for the one that only rejects.
+    setUpdateState({ status: "error", message: String(err?.message || err) });
+  }
+
+  return updateView();
+});
 
 ipcMain.handle("config:get", () => {
   const displays = screen.getAllDisplays();

@@ -240,6 +240,22 @@
       </div>
     </fieldset>
 
+    <fieldset>
+      <legend>Updates</legend>
+      <div class="row">
+        <label>
+          Update the wall
+          <span class="hint">
+            Nothing is checked, downloaded or installed unless you press this
+          </span>
+        </label>
+        <button id="updateAction" type="button">Check for updates</button>
+      </div>
+      <div class="row">
+        <span id="updateText" class="hint"></span>
+      </div>
+    </fieldset>
+
     <span id="version"></span>
     <span id="saved">Saved</span>
 
@@ -380,11 +396,32 @@
         flashSaved();
       });
 
+      // main owns the update state and describes it, so this only paints:
+      // `action` is what pressing means now, and no action means the button
+      // stays where it is and stops working rather than disappearing
+      function paintUpdate(view) {
+        const button = el("updateAction");
+        button.textContent = view.label;
+        button.disabled = !view.action;
+        button.dataset.action = view.action || "";
+        el("updateText").textContent = view.text;
+      }
+
+      el("updateAction").addEventListener("click", async () => {
+        const action = el("updateAction").dataset.action;
+        if (!action) return;
+        paintUpdate(await window.settings.update.act(action));
+      });
+
+      // a download reports itself, rather than being asked how it is going
+      window.settings.update.onState(paintUpdate);
+
       // the tray can change settings behind this window, and persist() sends
       // every field, so a stale checkbox would quietly put the old value back
       window.addEventListener("focus", load);
 
       load();
+      window.settings.update.state().then(paintUpdate);
     </script>
   </body>
 </html>

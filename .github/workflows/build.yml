@@ -26,12 +26,19 @@ jobs:
 
       - run: npm run dist
 
+      # latest.yml and the blockmap are the update feed: electron-updater reads
+      # the first to find out a version exists and the second to download only
+      # the parts that changed. They are written because a publish provider is
+      # configured, not because anything is published, so if-no-files-found
+      # failing here is the check that the config is still in place.
       - uses: actions/upload-artifact@v7
         with:
           name: cctv-wall-windows
           path: |
             release/*.exe
             release/*.zip
+            release/latest.yml
+            release/*.blockmap
           if-no-files-found: error
 
       # a tag is a release, everything else is just an artifact to download
@@ -41,4 +48,6 @@ jobs:
           files: |
             release/*.exe
             release/*.zip
+            release/latest.yml
+            release/*.blockmap
           generate_release_notes: true
