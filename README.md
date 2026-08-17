@@ -74,6 +74,14 @@ Two things carry it, and neither is obvious from the code that uses them:
   build fails rather than warns if they are not there. Releases before v0.2.1
   do not have them, so getting onto the first version that can update itself
   costs one manual install.
+- **The installer filename may not contain spaces.** electron-builder writes a
+  space-free name into `latest.yml` (`CCTV Wall Setup.exe` becomes
+  `CCTV-Wall-Setup.exe`) while GitHub turns spaces in an uploaded asset into
+  dots, so the feed asks for a file the release does not have and the download
+  404s. `nsis.artifactName` pins the built name to one with no spaces in it, so
+  both ends agree. This is only a problem because the release is uploaded by
+  the workflow rather than by electron-builder, which would otherwise upload
+  under its own safe name.
 - **`perMachine: false` is what makes an update installable at all.** A
   per-user install needs no elevation, so the updater can run the installer
   without a UAC prompt appearing on an unattended machine. Turning it on would

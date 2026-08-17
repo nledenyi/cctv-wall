@@ -1,6 +1,6 @@
 {
   "name": "cctv-wall",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Frigate Birdseye wall viewer: click a tile to open that camera full screen",
   "author": "Norbert Ledényi",
   "license": "MIT",
@@ -41,6 +41,7 @@
       "icon": "electron/icon.ico"
     },
     "nsis": {
+      "artifactName": "${name}-Setup-${version}.${ext}",
       "oneClick": false,
       "perMachine": false,
       "allowToChangeInstallationDirectory": true,
