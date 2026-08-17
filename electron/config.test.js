@@ -51,7 +51,9 @@ test("a mode that is already set is left alone", () => {
   assert.equal(loadWith({ windowMode: "window" }).windowMode, "window");
 });
 
-test("a mode that is not a mode falls back to the default", () => {
+test("a mode that is not a mode is read as an old config would be", () => {
+  // fullscreen, not the first run default: an unusable mode means the file was
+  // written before modes existed or by hand, and both are configured installs
   assert.equal(loadWith({ windowMode: "nonsense" }).windowMode, "fullscreen");
 });
 
@@ -67,9 +69,33 @@ test("out of range numbers are clamped, not trusted", () => {
   assert.equal(config.idleReturnSeconds, 0);
 });
 
-test("an unreadable config still starts the app", () => {
+test("an unreadable config still starts the app, and starts it modestly", () => {
+  // the same file held the Frigate host, so a config that cannot be read is a
+  // first run whether or not it is the first one: there is nothing to show,
+  // and the way out has to be reachable
   fs.writeFileSync(path.join(dir, "config.json"), "{ not json");
-  assert.equal(store.load().windowMode, "fullscreen");
+  const config = store.load();
+  assert.equal(config.windowMode, "window");
+  assert.equal(config.alwaysOnTop, false);
+});
+
+test("a first run is windowed and not pinned above everything", () => {
+  fs.rmSync(path.join(dir, "config.json"), { force: true });
+  const config = store.load();
+  assert.equal(config.windowMode, "window");
+  assert.equal(config.alwaysOnTop, false);
+  // the pair that main.js reads as "nobody has configured this yet"
+  assert.equal(config.frigateHost, "");
+});
+
+test("a saved config still decides, first run defaults do not leak into it", () => {
+  const config = loadWith({
+    frigateHost: "10.0.0.5:5000",
+    windowMode: "kiosk",
+    alwaysOnTop: true,
+  });
+  assert.equal(config.windowMode, "kiosk");
+  assert.equal(config.alwaysOnTop, true);
 });
 
 test("the old quit shortcut becomes the escape shortcut", () => {

@@ -11,9 +11,15 @@ const DEFAULTS = {
   // install. Stored as typed, in a plain file: see the note in settings.html
   frigateUser: "",
   frigatePassword: "",
-  alwaysOnTop: true,
+  // modest on purpose. These are what runs when there is no saved config, and
+  // no saved config means nobody has set this up yet: there is no host, so
+  // there is no wall to show, and the only thing on screen worth reaching is
+  // the settings window. A full screen window pinned above everything is the
+  // wrong shape for that, and it is the shape that is hardest to get out of.
+  // The saved config decides every run after the first one.
+  alwaysOnTop: false,
   // window | fullscreen | kiosk, in increasing order of how stuck you are
-  windowMode: "fullscreen",
+  windowMode: "window",
   autoStart: false,
   keepDisplayAwake: true,
   escapeHotkey: "Control+Shift+Q",

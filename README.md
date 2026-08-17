@@ -36,7 +36,7 @@ Installers are built by GitHub Actions on `windows-latest`, because
 cross-building NSIS from Linux means wine. Push a `v*` tag for a release, or
 run the workflow by hand for a downloadable artifact.
 
-Two things worth knowing before changing that file:
+Three things worth knowing before changing that file:
 
 - **Monitor identity is not stable.** Windows renumbers displays across
   reboots, driver updates and replugs, so the saved display id is worthless.
@@ -48,6 +48,12 @@ Two things worth knowing before changing that file:
   you cannot easily leave.** The quit shortcut and the tray icon are both ways
   out, deliberately, and a shortcut that fails to register is logged rather
   than swallowed.
+- **The first run is deliberately timid**: a plain window, not on top, with the
+  settings window open in front of it. It looks like an unfinished default and
+  is not one. Until a host is saved there is no wall to show, so the only thing
+  on screen worth reaching is the settings window, and full screen and
+  always-on-top are exactly what makes it unreachable. The saved config decides
+  every run after that.
 
 ## What Frigate has to be configured with
 
